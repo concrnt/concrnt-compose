@@ -1,4 +1,5 @@
 {
+  "requiredStatusChecks": null,
   "packageRules": [
     {
       "matchManagers": ["docker-compose"],
