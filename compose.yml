@@ -49,83 +49,83 @@ services:
       - external
       - internal
 
-  apbridge:
-    image: ghcr.io/concrnt/ccworld-ap-bridge:v0.4.1
-    restart: always
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    volumes:
-      - ./etc:/etc/concrnt/:ro
-    expose:
-      - 8000
-    networks:
-      - external
-      - internal
+# apbridge:
+#   image: ghcr.io/concrnt/ccworld-ap-bridge:v0.4.1
+#   restart: always
+#   depends_on:
+#     db:
+#       condition: service_healthy
+#     redis:
+#       condition: service_healthy
+#   volumes:
+#     - ./etc:/etc/concrnt/:ro
+#   expose:
+#     - 8000
+#   networks:
+#     - external
+#     - internal
 
-  mediaserver:
-    image: ghcr.io/totegamma/cc-media-server:v0.3.3
-    restart: always
-    links:
-      - db
-    depends_on:
-      db:
-        condition: service_healthy
-    expose:
-      - 8000
-    environment:
-      bucketName:
-      endpointUrl:
-      accessKeyId:
-      accessKeySecret:
-      publicBaseUrl:
-      quota:
-      forcePathStyle:
-      db_dsn: "host=db user=postgres password=postgres dbname=concrnt"
-    networks:
-      - external
-      - internal
+# mediaserver:
+#   image: ghcr.io/totegamma/cc-media-server:v0.3.3
+#   restart: always
+#   links:
+#     - db
+#   depends_on:
+#     db:
+#       condition: service_healthy
+#   expose:
+#     - 8000
+#   environment:
+#     bucketName:
+#     endpointUrl:
+#     accessKeyId:
+#     accessKeySecret:
+#     publicBaseUrl:
+#     quota:
+#     forcePathStyle:
+#     db_dsn: "host=db user=postgres password=postgres dbname=concrnt"
+#   networks:
+#     - external
+#     - internal
 
-  search:
-    restart: always
-    image: ghcr.io/concrnt/cc-search:v0.1.1
-    links:
-      - db
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-      meilisearch:
-        condition: service_healthy
-    expose:
-      - 8000
-    environment:
-      DB_DSN: "host=db user=postgres password=postgres dbname=concrnt"
-      MEILISEARCH_URL: "http://meilisearch:7700"
-      MEILISEARCH_KEY: "concrnt-meilisearch"
-      MEILISEARCH_IDX: "concrnt"
-      REDIS_URL: "redis://redis:6379"
-    networks:
-      - internal
+# search:
+#   restart: always
+#   image: ghcr.io/concrnt/cc-search:v0.1.1
+#   links:
+#     - db
+#   depends_on:
+#     db:
+#       condition: service_healthy
+#     redis:
+#       condition: service_healthy
+#     meilisearch:
+#       condition: service_healthy
+#   expose:
+#     - 8000
+#   environment:
+#     DB_DSN: "host=db user=postgres password=postgres dbname=concrnt"
+#     MEILISEARCH_URL: "http://meilisearch:7700"
+#     MEILISEARCH_KEY: "concrnt-meilisearch"
+#     MEILISEARCH_IDX: "concrnt"
+#     REDIS_URL: "redis://redis:6379"
+#   networks:
+#     - internal
 
-  meilisearch:
-    restart: always
-    image: getmeili/meilisearch:prototype-japanese-13
-    environment:
-      MEILI_NO_ANALYTICS: true
-      MEILI_ENV: production
-      MEILI_MASTER_KEY: "concrnt-meilisearch"
-    healthcheck:
-        test: set -o pipefail;curl -fsS http://localhost:7700/health | grep -q '{"status":"available"}'
-        retries: 3
-        timeout: 5s
-    volumes:
-      - ./_composeData/meili_data:/meili_data
-    networks:
-      - internal
+# meilisearch:
+#   restart: always
+#   image: getmeili/meilisearch:prototype-japanese-13
+#   environment:
+#     MEILI_NO_ANALYTICS: true
+#     MEILI_ENV: production
+#     MEILI_MASTER_KEY: "concrnt-meilisearch"
+#   healthcheck:
+#       test: set -o pipefail;curl -fsS http://localhost:7700/health | grep -q '{"status":"available"}'
+#       retries: 3
+#       timeout: 5s
+#   volumes:
+#     - ./_composeData/meili_data:/meili_data
+#   networks:
+#     - internal
 
   db:
     restart: always

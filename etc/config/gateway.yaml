@@ -171,23 +171,23 @@ services:
     path: /image
     preservePath: true
     injectCors: true
-  - name: world.concrnt.ap-bridge
-    host: apbridge
-    port: 8000
-    path: /ap
-    preservePath: true
-    injectCors: true
-  - name: world.concrnt.webfinger
-    host: apbridge
-    port: 8000
-    path: /.well-known
-    preservePath: true
-    injectCors: true
-  - name: world.concrnt.mediaserver
-    host: mediaserver
-    port: 8000
-    path: /storage
-  - name: net.concrnt.search
-    host: search
-    port: 8000
-    path: /search
+# - name: world.concrnt.ap-bridge
+#   host: apbridge
+#   port: 8000
+#   path: /ap
+#   preservePath: true
+#   injectCors: true
+# - name: world.concrnt.webfinger
+#   host: apbridge
+#   port: 8000
+#   path: /.well-known
+#   preservePath: true
+#   injectCors: true
+# - name: world.concrnt.mediaserver
+#   host: mediaserver
+#   port: 8000
+#   path: /storage
+# - name: net.concrnt.search
+#   host: search
+#   port: 8000
+#   path: /search
