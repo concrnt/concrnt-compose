@@ -118,6 +118,10 @@ services:
       MEILI_NO_ANALYTICS: true
       MEILI_ENV: production
       MEILI_MASTER_KEY: "concrnt-meilisearch"
+    healthcheck:
+        test: set -o pipefail;curl -fsS http://localhost:7700/health | grep -q '{"status":"available"}'
+        retries: 3
+        timeout: 5s
     volumes:
       - ./_composeData/meili_data:/meili_data
     networks:
