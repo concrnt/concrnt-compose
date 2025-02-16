@@ -1,0 +1,10 @@
+{
+  "packageRules": [
+    {
+      "matchManagers": ["docker-compose"],
+      "matchDatasources": ["docker"],
+      "automerge": true,
+      "automergeType": "pr"
+    }
+  ]
+}
