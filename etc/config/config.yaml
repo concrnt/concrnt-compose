@@ -20,7 +20,7 @@ concrnt:
   fqdn: example.tld
   # 'open' or 'invite' or 'close'
   # you can generate invite code with conctl command. `conctl gen invite`
-  registration: open
+  registration: invite
   # network
   # for testing: concrnt-devnet, for production: concrnt-mainnet
   dimension: concrnt-mainnet

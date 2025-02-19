@@ -49,6 +49,19 @@ services:
       - external
       - internal
 
+#  cloudflared:
+#    image: cloudflare/cloudflared:latest
+#    restart: always
+#    command:
+#      - 'tunnel'
+#      - '--protocol'
+#      - 'http2'
+#      - 'run'
+#      - '--token'
+#      - 'YOUR_TOKEN_HERE'
+#    networks:
+#      - external
+
 # apbridge:
 #   image: ghcr.io/concrnt/ccworld-ap-bridge:v0.4.1
 #   restart: always
