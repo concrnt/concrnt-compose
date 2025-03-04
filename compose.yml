@@ -1,6 +1,6 @@
 services:
   gateway:
-    image: ghcr.io/totegamma/ccgateway:v1.6.9
+    image: ghcr.io/totegamma/ccgateway:v1.6.10
     restart: always
     depends_on:
       db:
