@@ -16,7 +16,7 @@ services:
       - internal
 
   api:
-    image: ghcr.io/totegamma/ccapi:v1.6.12
+    image: ghcr.io/totegamma/ccapi:v1.6.13
     restart: always
     depends_on:
       db:
