@@ -32,7 +32,7 @@ services:
       - internal
 
   webui:
-    image: ghcr.io/concrnt/web-dashboard:v0.0.5
+    image: ghcr.io/concrnt/web-dashboard:v0.0.6
     restart: always
     expose:
       - 80
