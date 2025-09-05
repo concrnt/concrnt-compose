@@ -1,6 +1,6 @@
 services:
   gateway:
-    image: ghcr.io/concrnt/ccgateway:v1.7.4
+    image: ghcr.io/concrnt/ccgateway:v1.7.5
     restart: always
     depends_on:
       db:
