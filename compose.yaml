@@ -16,7 +16,7 @@ services:
       - internal
 
   api:
-    image: ghcr.io/concrnt/ccapi:v1.7.6
+    image: ghcr.io/concrnt/ccapi:v1.7.7
     restart: always
     depends_on:
       db:
