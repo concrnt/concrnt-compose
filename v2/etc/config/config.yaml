@@ -1,0 +1,76 @@
+# これはサンプルです。デプロイ前に fqdn と各種鍵を必ず書き換えてください。
+#
+# v1 の config.yaml とはキー構成が変わっています。主な違い:
+#   - server.dsn 等は `backends:` 配下に移動
+#   - concrnt.dimension → concrnt.layer に改名
+#   - profile → meta、captcha/vapid → integrations に整理
+#   - gateway.yaml は廃止され、ルーティングは下記 services: に統合
+
+concrnt:
+  # fqdn はドメインの識別子です。ノード起動後の変更は非常に困難なので、
+  # v1 から移行する場合は必ず v1 と同じ値を指定してください。
+  fqdn: example.tld
+  # 'open'(誰でも登録可) / 'invite'(招待制) / 'close'(新規停止)
+  # 招待コードは `docker compose run --rm concrnt2 conctl generate invite` で発行できます。
+  registration: invite
+  # サーバーが内部で利用する秘密鍵。v1 から移行する場合は v1 と同じ値を指定し、
+  # ドメインのアイデンティティを引き継いでください。
+  # 新規生成する場合: `docker compose run --rm concrnt2 conctl generate identity`
+  privatekey: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  # ネットワーク。テスト用: concrnt-devnet / 本番用: concrnt-mainnet
+  layer: concrnt-mainnet
+  debug: false
+
+backends:
+  postgresDsn: "host=v2db user=postgres password=postgres dbname=concrnt port=5432 sslmode=disable"
+  gatewayAddr: http://concrnt2
+  redisAddr: "v2-redis:6379"
+  memcachedAddr: "v2-memcached:11211"
+
+observability:
+  enableTrace: false
+  traceEndpoint: "alloy:4318"
+
+integrations:
+  # Google reCAPTCHA (v2 checkbox)。下記はテスト用の公開キーです。
+  captchaSiteKey: "6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI"
+  captchaSecret: "6LeIxAcTAAAAAGG-vFI1TnRWxMZNFuojJ4WifJWe"
+  # プッシュ通知用の VAPID 鍵。`conctl generate vapid` で生成できます。
+  vapidPublicKey: ""
+  vapidPrivateKey: ""
+
+meta:
+  nickname: concrnt-domain
+  description: domain description
+  logo: ""
+  wordmark: ""
+  themeColor: "#20193b"
+  maintainerName: changeme
+  maintainerEmail: changeme@example.com
+
+# concrnt2 が内包するゲートウェイのルーティング設定です。
+# 追加サービスを有効化した場合は、対応する項目のコメントを外してください。
+services:
+  - name: world.concrnt.hyperproxy.summary
+    host: hyperproxy
+    port: 8000
+    path: /summary
+    preservePath: true
+  - name: world.concrnt.hyperproxy.image
+    host: hyperproxy
+    port: 8000
+    path: /image
+    preservePath: true
+# - name: world.concrnt.mediaserver
+#   host: mediaserver2
+#   port: 8000
+#   path: /storage2
+# - name: net.concrnt.search
+#   host: cc-search
+#   port: 8000
+#   path: /search
+  - name: world.concrnt.web
+    host: world-app
+    port: 80
+    path: /
+    preservePath: true

@@ -1,0 +1,209 @@
+services:
+  # concrnt v2 の本体。v1 では ccgateway + ccapi の2つに分かれていた役割が、
+  # v2 ではこの単一の `concrnt` バイナリに統合されています。
+  # 自身がゲートウェイ(リバースプロキシ)を内包し、config.yaml の `services:`
+  # に従って world-app や hyperproxy などへリクエストを振り分けます。
+  # :8000 が唯一の公開ポート、:8001 は内部ヘルスチェック用(公開しないこと)。
+  concrnt2:
+    image: ghcr.io/concrnt/concrnt:latest
+    restart: always
+    depends_on:
+      v2db:
+        condition: service_healthy
+      v2-redis:
+        condition: service_healthy
+    ports:
+      - "8080:8000"
+    volumes:
+      - ./etc:/etc/concrnt/:ro
+    networks:
+      - external
+      - internal
+
+  # Web クライアント(world-app)。v1 の web-dashboard を置き換えるもので、
+  # concrnt2 から `/` 配下として配信されます。
+  world-app:
+    image: ghcr.io/concrnt/concrnt-web:main
+    restart: always
+    expose:
+      - 80
+    networks:
+      - external
+      - internal
+
+  # OGP/画像プロキシ。既定で有効です。
+  hyperproxy:
+    image: ghcr.io/concrnt/hyperproxy:v0.4.1
+    restart: always
+    environment:
+      - "PORT=8000"
+      - "MEMCACHED_HOST=v2-memcached:11211"
+    expose:
+      - 8000
+    networks:
+      - external
+      - internal
+
+  # v1 → v2 データ移行用の単発コンテナ。
+  # 通常の `docker compose up` では起動しません(profiles: migration)。
+  # 移行手順の詳細は下記ドキュメントを参照してください。
+  #   https://square.concrnt.net/getting-started/hosting/migration/compose/
+  #
+  # 実行前に、稼働中の v1 データベースコンテナをこの構成のネットワークへ
+  # `v1db` という別名で接続してください:
+  #   docker network connect --alias v1db concrnt-v2-external <v1のdbコンテナ名>
+  #
+  # 下記の各引数(csid / fqdn / ignore-ccids 等)は自分の環境に合わせて
+  # 必ず書き換えてください。
+  migration:
+    image: ghcr.io/concrnt/concrnt:v1.10.0-beta4
+    profiles:
+      - migration
+    depends_on:
+      v2db:
+        condition: service_healthy
+    command:
+      - conctl
+      - migrate
+      - v1-to-v2
+      - --from-csid
+      - ccs1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - --from-dsn
+      - postgres://postgres:postgres@v1db:5432/concrnt
+      - --from-fqdn
+      - example.tld
+      - --dest-dsn
+      - postgres://postgres:postgres@v2db:5432/concrnt
+      - --dest-fqdn
+      - example.tld
+      # 移行したくないアカウント(例: v1用のAPIサーバーエージェントのCCID)があれば
+      # コメントを外して指定します。複数指定する場合はカンマ区切り。
+      # - --ignore-ccids
+      # - con1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    volumes:
+      - ./etc:/etc/concrnt/:ro
+    networks:
+      - external
+      - internal
+
+#  cloudflared:
+#    image: cloudflare/cloudflared:latest
+#    restart: always
+#    command:
+#      - 'tunnel'
+#      - '--protocol'
+#      - 'http2'
+#      - 'run'
+#      - '--token'
+#      - 'YOUR_TOKEN_HERE'
+#    networks:
+#      - external
+
+# mediaserver2:
+#   image: ghcr.io/totegamma/cc-media-server:v1.0.0-beta4
+#   restart: always
+#   depends_on:
+#     v2db:
+#       condition: service_healthy
+#   expose:
+#     - 8000
+#   environment:
+#     bucketName:
+#     endpointUrl:
+#     accessKeyId:
+#     accessKeySecret:
+#     publicBaseUrl:
+#     quota: '1000000000'
+#     region: 'auto'
+#     db_dsn: "host=v2db user=postgres password=postgres dbname=concrnt port=5432 sslmode=disable"
+#   networks:
+#     - external
+#     - internal
+
+# cc-search:
+#   restart: always
+#   image: ghcr.io/concrnt/cc-search:v0.1.2
+#   depends_on:
+#     v2db:
+#       condition: service_healthy
+#     v2-redis:
+#       condition: service_healthy
+#     meilisearch:
+#       condition: service_healthy
+#   expose:
+#     - 8000
+#   environment:
+#     DB_DSN: "host=v2db user=postgres password=postgres dbname=concrnt port=5432 sslmode=disable"
+#     MEILISEARCH_URL: "http://meilisearch:7700"
+#     MEILISEARCH_KEY: "concrnt-meilisearch"
+#     MEILISEARCH_IDX: "concrnt"
+#     REDIS_URL: "redis://v2-redis:6379"
+#     PORT: "8000"
+#   networks:
+#     - internal
+
+# meilisearch:
+#   restart: always
+#   image: getmeili/meilisearch:prototype-japanese-13
+#   environment:
+#     MEILI_NO_ANALYTICS: true
+#     MEILI_ENV: production
+#     MEILI_MASTER_KEY: "concrnt-meilisearch"
+#   healthcheck:
+#       test: set -o pipefail;curl -fsS http://localhost:7700/health | grep -q '{"status":"available"}'
+#       retries: 3
+#       timeout: 5s
+#   volumes:
+#     - ./_composeData/meili_data:/meili_data
+#   networks:
+#     - internal
+
+  # v2 のデータベース。v1 の postgres:16 から postgres:18 に更新されています。
+  # データディレクトリのパスも /var/lib/postgresql/data から /var/lib/postgresql
+  # へ変わっている点に注意してください(pg18 の既定レイアウト)。
+  v2db:
+    restart: always
+    image: postgres:18-bookworm
+    healthcheck:
+      test: "pg_isready -U postgres"
+      interval: 5s
+      retries: 20
+    volumes:
+      - ./_composeData/db:/var/lib/postgresql
+    environment:
+      - "POSTGRES_PASSWORD=postgres"
+      - "POSTGRES_DB=concrnt"
+    expose:
+      - 5432
+    networks:
+      - internal
+
+  v2-redis:
+    restart: always
+    image: redis:7-bookworm
+    volumes:
+      - ./_composeData/redis:/data
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 5s
+      retries: 20
+    expose:
+      - 6379
+    networks:
+      - internal
+
+  v2-memcached:
+    restart: always
+    image: memcached:1.6-bookworm
+    expose:
+      - 11211
+    networks:
+      - internal
+
+networks:
+  # 移行時に v1 の db コンテナを接続するため、外部ネットワークには
+  # 固定名を付けています(docker network connect で参照します)。
+  external:
+    name: concrnt-v2-external
+  internal:
+    internal: true
