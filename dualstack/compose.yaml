@@ -1,0 +1,262 @@
+# v1 と v2 を並行運用(同時起動)するためのデュアルスタック構成です。
+# v1 → v2 移行の過渡期に、v2 を公開エンドポイントとしつつ、/api/v1 や /ap などの
+# レガシーパスを v1 の gateway へ内部プロキシします(Helm の concrnt2-migration
+# チャート相当)。手順の詳細は下記ドキュメントを参照してください。
+#   https://square.concrnt.net/operator/migration/compose-dualstack/
+#
+# 設定ファイルとデータディレクトリは ../v1 と ../v2 のものをそのまま使います。
+# このファイル自体を編集する必要は基本的にありません(migration の引数を除く)。
+# 利用前に、v2 側の ../v2/etc/config/config.yaml で `net.concrnt.legacy` の
+# コメントを外しておいてください。
+#
+# hyperproxy は v1 / v2 共通のため 1 つだけ起動します(設定は v2 に合わせます)。
+# 公開側の /summary と /image は concrnt2 が直接 hyperproxy へルーティングするため、
+# v1 の gateway.yaml にある hyperproxy 向けのルートは並行運用中は使われません。
+
+services:
+  # ---------------------------------------------------------------------------
+  # v1 スタック(公開ポートなし。concrnt2 からのプロキシ経由でのみ到達します)
+  # ---------------------------------------------------------------------------
+
+  gateway:
+    image: ghcr.io/concrnt/ccgateway:v1.7.7
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # v1 単独構成と異なり、ホストの 8080 は concrnt2 に譲ります。
+    expose:
+      - 8080
+    volumes:
+      - ../v1/etc:/etc/concrnt/:ro
+    networks:
+      - v1-internal
+      - legacy
+
+  api:
+    image: ghcr.io/concrnt/ccapi:v1.7.7
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ../v1/etc:/etc/concrnt/:ro
+    expose:
+      - 8000
+    networks:
+      - external
+      - v1-internal
+
+  webui:
+    image: ghcr.io/concrnt/web-dashboard:v0.0.6
+    restart: always
+    expose:
+      - 80
+    networks:
+      - v1-internal
+
+# apbridge:
+#   image: ghcr.io/concrnt/ccworld-ap-bridge:v0.4.1
+#   restart: always
+#   depends_on:
+#     db:
+#       condition: service_healthy
+#     redis:
+#       condition: service_healthy
+#   volumes:
+#     - ../v1/etc:/etc/concrnt/:ro
+#   expose:
+#     - 8000
+#   networks:
+#     - external
+#     - v1-internal
+
+  db:
+    restart: always
+    image: postgres:16-bookworm
+    healthcheck:
+      test: "pg_isready -U postgres"
+      interval: 5s
+      retries: 20
+    volumes:
+      - ../v1/_composeData/db:/var/lib/postgresql/data
+    environment:
+      - "POSTGRES_PASSWORD=postgres"
+      - "POSTGRES_DB=concrnt"
+    expose:
+      - 5432
+    networks:
+      - v1-internal
+
+  redis:
+    restart: always
+    image: redis:7-bookworm
+    volumes:
+      - ../v1/_composeData/redis:/data
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 5s
+      retries: 20
+    expose:
+      - 6379
+    networks:
+      - v1-internal
+
+  memcached:
+    restart: always
+    image: memcached:1.6-bookworm
+    expose:
+      - 11211
+    networks:
+      - v1-internal
+
+  # ---------------------------------------------------------------------------
+  # v2 スタック(concrnt2 が唯一の公開エンドポイント)
+  # ---------------------------------------------------------------------------
+
+  concrnt2:
+    image: ghcr.io/concrnt/concrnt:latest
+    restart: always
+    depends_on:
+      v2db:
+        condition: service_healthy
+      v2-redis:
+        condition: service_healthy
+    ports:
+      - "8080:8000"
+    volumes:
+      - ../v2/etc:/etc/concrnt/:ro
+    networks:
+      - external
+      - v2-internal
+      - legacy
+
+  world-app:
+    image: ghcr.io/concrnt/concrnt-web:main
+    restart: always
+    expose:
+      - 80
+    networks:
+      - external
+      - v2-internal
+
+  # OGP/画像プロキシ。v1 / v2 共通なので1つだけ起動します。
+  hyperproxy:
+    image: ghcr.io/concrnt/hyperproxy:v0.4.1
+    restart: always
+    environment:
+      - "PORT=8000"
+      - "MEMCACHED_HOST=v2-memcached:11211"
+    expose:
+      - 8000
+    networks:
+      - external
+      - v2-internal
+
+  # v1 → v2 データ移行用の単発コンテナ。
+  # 通常の `docker compose up` では起動しません(profiles: migration)。
+  # 同一プロジェクト内なので v1 の db へ直接到達でき、`docker network connect`
+  # による接続は不要です(--from-dsn のホストはそのまま `db`)。
+  # 下記の各引数(csid / fqdn / ignore-ccids 等)は自分の環境に合わせて
+  # 必ず書き換えてください。
+  migration:
+    image: ghcr.io/concrnt/concrnt:v1.10.0-beta4
+    profiles:
+      - migration
+    depends_on:
+      db:
+        condition: service_healthy
+      v2db:
+        condition: service_healthy
+    command:
+      - conctl
+      - migrate
+      - v1-to-v2
+      - --from-csid
+      - ccs1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+      - --from-dsn
+      - postgres://postgres:postgres@db:5432/concrnt
+      - --from-fqdn
+      - example.tld
+      - --dest-dsn
+      - postgres://postgres:postgres@v2db:5432/concrnt
+      - --dest-fqdn
+      - example.tld
+      # 移行したくないアカウント(例: v1用のAPIサーバーエージェントのCCID)があれば
+      # コメントを外して指定します。複数指定する場合はカンマ区切り。
+      # - --ignore-ccids
+      # - con1xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+    volumes:
+      - ../v2/etc:/etc/concrnt/:ro
+    networks:
+      - v1-internal
+      - v2-internal
+
+#  cloudflared:
+#    image: cloudflare/cloudflared:latest
+#    restart: always
+#    command:
+#      - 'tunnel'
+#      - '--protocol'
+#      - 'http2'
+#      - 'run'
+#      - '--token'
+#      - 'YOUR_TOKEN_HERE'
+#    networks:
+#      - external
+
+  v2db:
+    restart: always
+    image: postgres:18-bookworm
+    healthcheck:
+      test: "pg_isready -U postgres"
+      interval: 5s
+      retries: 20
+    volumes:
+      - ../v2/_composeData/db:/var/lib/postgresql
+    environment:
+      - "POSTGRES_PASSWORD=postgres"
+      - "POSTGRES_DB=concrnt"
+    expose:
+      - 5432
+    networks:
+      - v2-internal
+
+  v2-redis:
+    restart: always
+    image: redis:7-bookworm
+    volumes:
+      - ../v2/_composeData/redis:/data
+    healthcheck:
+      test: "redis-cli ping"
+      interval: 5s
+      retries: 20
+    expose:
+      - 6379
+    networks:
+      - v2-internal
+
+  v2-memcached:
+    restart: always
+    image: memcached:1.6-bookworm
+    expose:
+      - 11211
+    networks:
+      - v2-internal
+
+networks:
+  # 外向き通信(連合・OGP取得など)と cloudflared 用のネットワーク
+  external:
+  # v1 サービス間の内部ネットワーク
+  v1-internal:
+    internal: true
+  # v2 サービス間の内部ネットワーク
+  v2-internal:
+    internal: true
+  # concrnt2 から v1 gateway へレガシーパスをプロキシするための専用ネットワーク
+  legacy:
+    internal: true

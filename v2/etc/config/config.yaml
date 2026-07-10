@@ -69,6 +69,21 @@ services:
 #   host: cc-search
 #   port: 8000
 #   path: /search
+# dualstack構成(v1との並行運用)のときだけコメントを外してください。
+# /api/v1 などのレガシーパスを v1 の gateway へプロキシします。
+# 詳細: https://square.concrnt.net/operator/migration/compose-dualstack/
+  # - name: net.concrnt.legacy
+  #   host: gateway
+  #   port: 8080
+  #   paths:
+  #     - /api/v1
+  #     - /ap
+  #     - /services
+  #     - .well-known/webfinger
+  #     - .well-known/nodeinfo
+  #     - .well-known/host-meta
+  #     - /storage
+  #   preservePath: true
   - name: world.concrnt.web
     host: world-app
     port: 80
