@@ -1,4 +1,4 @@
 # 運用ガイド Operator Guide
 
-see [https://square.concrnt.net/getting-started/hosting/compose/](https://square.concrnt.net/getting-started/hosting/compose/)
+see [https://square.concrnt.net/archive/compose/](https://square.concrnt.net/archive/compose/)
 

@@ -47,7 +47,7 @@ services:
   # v1 → v2 データ移行用の単発コンテナ。
   # 通常の `docker compose up` では起動しません(profiles: migration)。
   # 移行手順の詳細は下記ドキュメントを参照してください。
-  #   https://square.concrnt.net/getting-started/hosting/migration/compose/
+  #   https://square.concrnt.net/operator/migration/compose/
   #
   # 実行前に、稼働中の v1 データベースコンテナをこの構成のネットワークへ
   # `v1db` という別名で接続してください:
