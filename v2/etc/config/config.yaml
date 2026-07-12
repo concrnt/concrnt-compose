@@ -61,6 +61,16 @@ services:
     port: 8000
     path: /image
     preservePath: true
+# ActivityPubブリッジ (https://github.com/concrnt/activitypub) を使う場合はコメントを外してください。
+# - name: net.concrnt.activitypub
+#   host: activitypub
+#   port: 8008
+#   paths:
+#     - /ap
+#     - /.well-known/webfinger
+#     - /.well-known/nodeinfo
+#     - /.well-known/host-meta
+#   preservePath: true
 # - name: world.concrnt.mediaserver
 #   host: mediaserver2
 #   port: 8000
