@@ -23,7 +23,7 @@ concrnt:
 
 backends:
   postgresDsn: "host=v2db user=postgres password=postgres dbname=concrnt port=5432 sslmode=disable"
-  gatewayAddr: http://concrnt2
+  gatewayAddr: http://concrnt2:8000
   redisAddr: "v2-redis:6379"
   memcachedAddr: "v2-memcached:11211"
 
