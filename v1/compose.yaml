@@ -41,7 +41,7 @@ services:
       - internal
 
   hyperproxy:
-    image: ghcr.io/concrnt/hyperproxy:v0.4.1
+    image: ghcr.io/concrnt/hyperproxy:v0.5.0
     restart: always
     expose:
       - 8080

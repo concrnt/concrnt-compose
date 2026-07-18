@@ -33,7 +33,7 @@ services:
 
   # OGP/画像プロキシ。既定で有効です。
   hyperproxy:
-    image: ghcr.io/concrnt/hyperproxy:v0.4.1
+    image: ghcr.io/concrnt/hyperproxy:v0.5.0
     restart: always
     environment:
       - "PORT=8000"
