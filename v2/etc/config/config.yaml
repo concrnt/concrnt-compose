@@ -51,15 +51,12 @@ meta:
 # concrnt2 が内包するゲートウェイのルーティング設定です。
 # 追加サービスを有効化した場合は、対応する項目のコメントを外してください。
 services:
-  - name: world.concrnt.hyperproxy.summary
+  - name: world.concrnt.hyperproxy
     host: hyperproxy
     port: 8000
-    path: /summary
-    preservePath: true
-  - name: world.concrnt.hyperproxy.image
-    host: hyperproxy
-    port: 8000
-    path: /image
+    paths:
+      - /image
+      - /summary
     preservePath: true
 # ActivityPubブリッジ (https://github.com/concrnt/activitypub) を使う場合はコメントを外してください。
 # - name: net.concrnt.activitypub
