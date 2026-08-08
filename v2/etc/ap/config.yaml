@@ -1,0 +1,24 @@
+# ActivityPubブリッジ (https://github.com/concrnt/activitypub) の設定サンプルです。
+# 有効化する前に domain と privateKey を必ず書き換えてください。
+#
+# 注意: このファイルを etc/config/ に置かないでください。etc/config/ は concrnt2 本体が
+# ディレクトリごと設定として読み込むため、コアの設定に混ざってしまいます。
+
+server:
+  port: 8008
+
+# データベースとRedisはv2コア(concrnt2)と共有します。
+# いずれもURL形式で指定してください(host=... 形式のDSNは使えません)。
+database:
+  url: postgres://postgres:postgres@v2db:5432/concrnt
+redis:
+  url: redis://v2-redis:6379
+
+concrnt:
+  # コア(etc/config/config.yaml の concrnt.fqdn)と同じ値を指定します。
+  # スキームやパスは付けず、素のホスト名で指定してください。
+  domain: example.tld
+  # ブリッジ用サービスアカウントの秘密鍵。ccidは秘密鍵から自動で導出されるため設定不要です。
+  # アカウントの作成方法はドキュメントを参照してください。
+  #   https://square.concrnt.net/getting-started/hosting/compose/
+  privateKey: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
