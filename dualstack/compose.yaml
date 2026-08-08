@@ -188,7 +188,7 @@ services:
   # 下記の各引数(csid / fqdn / ignore-ccids 等)は自分の環境に合わせて
   # 必ず書き換えてください。
   migration:
-    image: ghcr.io/concrnt/concrnt:v1.10.19
+    image: ghcr.io/concrnt/concrnt:v1.10.20
     profiles:
       - migration
     depends_on:
