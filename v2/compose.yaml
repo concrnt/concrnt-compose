@@ -123,7 +123,7 @@ services:
 #      - external
 
 # mediaserver2:
-#   image: ghcr.io/totegamma/cc-media-server:v1.0.0-beta4
+#   image: ghcr.io/concrnt/storage-s3:v1.0.0
 #   restart: always
 #   depends_on:
 #     v2db:
