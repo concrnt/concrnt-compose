@@ -159,7 +159,7 @@ services:
 
   redis:
     restart: always
-    image: redis:7-bookworm
+    image: redis:8-bookworm
     volumes:
       - ./_composeData/redis:/data
     healthcheck:

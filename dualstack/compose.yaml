@@ -98,7 +98,7 @@ services:
 
   redis:
     restart: always
-    image: redis:7-bookworm
+    image: redis:8-bookworm
     volumes:
       - ../v1/_composeData/redis:/data
     healthcheck:
@@ -253,7 +253,7 @@ services:
 
   v2-redis:
     restart: always
-    image: redis:7-bookworm
+    image: redis:8-bookworm
     volumes:
       - ../v2/_composeData/redis:/data
     healthcheck:
