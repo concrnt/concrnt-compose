@@ -23,7 +23,7 @@ services:
   # Web クライアント(world-app)。v1 の web-dashboard を置き換えるもので、
   # concrnt2 から `/` 配下として配信されます。
   world-app:
-    image: ghcr.io/concrnt/concrnt-web:main
+    image: ghcr.io/concrnt/world-app:2026.11.19
     restart: always
     expose:
       - 80

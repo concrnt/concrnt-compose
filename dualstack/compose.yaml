@@ -140,7 +140,7 @@ services:
       - legacy
 
   world-app:
-    image: ghcr.io/concrnt/concrnt-web:main
+    image: ghcr.io/concrnt/world-app:2026.11.19
     restart: always
     expose:
       - 80
