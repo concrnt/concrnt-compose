@@ -9,10 +9,9 @@
       "automergeType": "pr"
     },
     {
-      "description": "world-app is released by date (YYYY.MM.DD, then YYYY.MM.DD.N on the same day); the default docker versioning treats a different number of parts as incompatible and would skip the .N releases. A new year is a major bump only by numbering, so every update is automerged.",
+      "description": "world-app is released as YYYY.MDD.N (e.g. 2026.1120.0). A new year is a major bump only by numbering, so every update is automerged.",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/concrnt/world-app"],
-      "versioning": "regex:^(?<major>\\d{4})\\.(?<minor>\\d{1,2})\\.(?<patch>\\d{1,2})(\\.(?<build>\\d+))?$",
       "automerge": true,
       "automergeType": "pr"
     }
