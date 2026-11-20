@@ -186,7 +186,7 @@ services:
   # へ変わっている点に注意してください(pg18 の既定レイアウト)。
   v2db:
     restart: always
-    image: postgres:18-bookworm
+    image: postgres:19-bookworm
     healthcheck:
       test: "pg_isready -U postgres"
       interval: 5s
